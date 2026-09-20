@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SECNS — Smart Emergency Contact Notification System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0d1420; --panel:#141d2b; --panel2:#1b2636; --line:#2a3748;
+  --text:#e6edf6; --muted:#8ba0bb; --signal:#ff6a3d; --amber:#ffc247;
+  --mint:#3ddc97; --blue:#5aa9ff; --red:#ff4d5e;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--ink);color:var(--text);
+  font-family:"IBM Plex Sans",system-ui,-apple-system,Segoe UI,sans-serif;font-size:14px;line-height:1.55}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace}
+header{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;background:linear-gradient(180deg,#121b28,#0d1420)}
+h1{font-size:19px;margin:0;font-weight:600;letter-spacing:-.2px}
+h1 span{color:var(--signal)}
+.sub{color:var(--muted);font-size:12px;margin-top:2px}
+.sub b{color:var(--mint);font-weight:500}
+.pill{border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:11.5px;color:var(--muted);background:var(--panel)}
+.pill b{color:var(--mint)}
+main{display:grid;grid-template-columns:300px minmax(0,1fr) 330px;gap:14px;padding:14px;max-width:1500px;margin:0 auto}
+@media(max-width:1100px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+.card h2{font-size:12px;font-weight:600;color:var(--muted);margin:0 0 12px;letter-spacing:.06em}
+label{display:block;font-size:11.5px;color:var(--muted);margin:10px 0 4px}
+select,input[type=text]{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
+  border-radius:7px;padding:8px 9px;font:inherit;font-size:13px}
+input[type=range]{width:100%;accent-color:var(--signal)}
+.val{float:right;color:var(--text)}
+button{font:inherit;cursor:pointer;border-radius:7px;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:8px 12px}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.go{width:100%;margin-top:16px;background:var(--signal);border-color:var(--signal);color:#1a0b04;font-weight:600;padding:11px}
+.go:disabled{opacity:.45;cursor:not-allowed}
+.ghost{width:100%;margin-top:8px;font-size:12.5px}
+
+.agent{display:grid;grid-template-columns:26px 1fr;gap:10px;padding:10px 0;border-bottom:1px dashed var(--line);opacity:.35;transition:opacity .25s}
+.agent:last-child{border-bottom:0}
+.agent.on{opacity:1}
+.dot{width:26px;height:26px;border-radius:50%;border:1px solid var(--line);display:grid;place-items:center;
+  font-size:11px;font-weight:600;color:var(--muted);background:var(--panel2)}
+.agent.on .dot{background:var(--signal);color:#1a0b04;border-color:var(--signal)}
+.agent.done .dot{background:var(--mint);color:#04241a;border-color:var(--mint)}
+.aname{font-weight:600;font-size:13.5px}
+.arole{color:var(--muted);font-size:11.5px}
+.athink{margin-top:6px;font-size:12px;color:var(--text);background:var(--panel2);border-left:2px solid var(--signal);
+  padding:7px 9px;border-radius:0 6px 6px 0;white-space:pre-wrap}
+.athink:empty{display:none}
+
+.sev{display:flex;gap:10px;align-items:baseline;margin-bottom:10px;flex-wrap:wrap}
+.score{font-size:34px;font-weight:700;line-height:1}
+.tag{border-radius:6px;padding:3px 9px;font-size:11.5px;font-weight:600}
+.t1{background:rgba(255,77,94,.16);color:var(--red)}
+.t2{background:rgba(255,194,71,.16);color:var(--amber)}
+.t3{background:rgba(93,169,255,.16);color:var(--blue)}
+.bar{height:6px;border-radius:99px;background:var(--panel2);overflow:hidden;margin-bottom:12px}
+.bar i{display:block;height:100%;width:0;background:var(--signal);transition:width .5s}
+
+.c-row{display:flex;gap:9px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.c-row:last-child{border-bottom:0}
+.rank{width:20px;height:20px;border-radius:5px;background:var(--panel2);display:grid;place-items:center;font-size:10.5px;color:var(--muted);flex:none}
+.c-row b{display:block;font-size:13px}
+.c-row small{color:var(--muted)}
+.st{margin-left:auto;font-size:10.5px;padding:2px 7px;border-radius:5px;background:var(--panel2);color:var(--muted);flex:none}
+.st.sent{background:rgba(255,194,71,.15);color:var(--amber)}
+.st.ack{background:rgba(61,220,151,.15);color:var(--mint)}
+.st.esc{background:rgba(255,77,94,.15);color:var(--red)}
+
+.msg{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;margin-bottom:8px;font-size:12.5px}
+.msg .h{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;margin-bottom:5px;gap:8px}
+.msg .b{white-space:pre-wrap}
+.msg .ackbtn{margin-top:8px;padding:5px 10px;font-size:11.5px;background:transparent;border-color:var(--mint);color:var(--mint)}
+.feed{max-height:340px;overflow-y:auto}
+.empty{color:var(--muted);font-size:12.5px;padding:14px 0;text-align:center}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;color:var(--muted);font-weight:500;font-size:11px;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid var(--line)}
+.wrap{padding:0 14px 30px;max-width:1500px;margin:0 auto}
+.kv{display:flex;justify-content:space-between;font-size:12px;padding:4px 0;color:var(--muted)}
+.kv b{color:var(--text);font-weight:500}
+.blink{animation:bl 1s steps(2) infinite}
+@keyframes bl{50%{opacity:.25}}
+.note{max-width:1500px;margin:0 auto;padding:0 14px 6px;color:var(--muted);font-size:11.5px}
+.note code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--text)}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>SECNS <span>·</span> Smart Emergency Contact Notification System</h1>
+    <div class="sub">Agentic AI &amp; Automation — Mini Project · Bhumika Arora (24070521227), Sem 5 · SIT Nagpur<br>
+    <b>Standalone demo</b> — this page mirrors the six-agent logic of the Python package (<code>secns/</code>) 1:1 so it can be viewed anywhere without running a server.</div>
+  </div>
+  <div class="pill mono">AGENTS <b id="astat">6 IDLE</b></div>
+</header>
+
+<main>
+  <section class="card">
+    <h2>1 · SENSOR / TRIGGER INPUT</h2>
+    <label for="ev">Detected event</label>
+    <select id="ev">
+      <option value="fall">Fall detected (wearable IMU)</option>
+      <option value="cardiac">Cardiac anomaly (PPG/ECG)</option>
+      <option value="crash">Vehicle crash (accelerometer)</option>
+      <option value="sos">Manual SOS button</option>
+      <option value="fire">Smoke / fire sensor</option>
+      <option value="inactive">Prolonged inactivity</option>
+    </select>
+
+    <label for="hr">Heart rate <span class="val mono" id="hrv">168 bpm</span></label>
+    <input type="range" id="hr" min="20" max="220" value="168">
+
+    <label for="g">Impact force <span class="val mono" id="gv">6.4 G</span></label>
+    <input type="range" id="g" min="0" max="20" step="0.1" value="6.4">
+
+    <label for="resp">User response to check-in prompt</label>
+    <select id="resp">
+      <option value="0">No response (30 s timeout)</option>
+      <option value="1">Responded — "I'm OK"</option>
+      <option value="2">Responded — "Need help"</option>
+    </select>
+
+    <label for="loc">Location fix</label>
+    <select id="loc">
+      <option value="home">Home · Amravati, MH</option>
+      <option value="road">NH-53 Highway, Amravati</option>
+      <option value="campus">SIT Nagpur Campus</option>
+      <option value="unknown">GPS weak — last known cell tower</option>
+    </select>
+
+    <button class="go" id="run">Trigger emergency event</button>
+    <button class="ghost" id="reset">Reset console</button>
+
+    <div style="margin-top:16px;border-top:1px solid var(--line);padding-top:12px">
+      <div class="kv"><span>Incidents today</span><b id="k1">0</b></div>
+      <div class="kv"><span>Avg. notify latency</span><b id="k2">—</b></div>
+      <div class="kv"><span>False alarms suppressed</span><b id="k3">0</b></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>2 · AGENT PIPELINE — REASONING TRACE</h2>
+    <div id="pipe"></div>
+  </section>
+
+  <div style="display:flex;flex-direction:column;gap:14px;min-width:0">
+    <section class="card">
+      <h2>3 · TRIAGE OUTPUT</h2>
+      <div class="sev">
+        <div class="score mono" id="score">—</div>
+        <div class="tag t3" id="tier">AWAITING SIGNAL</div>
+      </div>
+      <div class="bar"><i id="barfill"></i></div>
+      <div class="kv"><span>Incident ID</span><b class="mono" id="iid">—</b></div>
+      <div class="kv"><span>Location</span><b id="lout">—</b></div>
+      <div class="kv"><span>Nearest facility</span><b id="hosp">—</b></div>
+    </section>
+
+    <section class="card">
+      <h2>4 · CONTACT PRIORITY QUEUE</h2>
+      <div id="contacts"><div class="empty">No ranked contacts yet.</div></div>
+    </section>
+
+    <section class="card">
+      <h2>5 · DISPATCH FEED</h2>
+      <div class="feed" id="feed"><div class="empty">No messages dispatched.</div></div>
+    </section>
+  </div>
+</main>
+
+<div class="wrap">
+  <section class="card">
+    <h2>6 · INCIDENT LOG (AUDIT TRAIL)</h2>
+    <table>
+      <thead><tr><th>Incident</th><th>Event</th><th>Severity</th><th>Tier</th><th>Notified</th><th>Ack</th><th>Outcome</th></tr></thead>
+      <tbody id="log"><tr><td colspan="7" style="color:var(--muted);padding:14px 8px">Empty — trigger an event to populate.</td></tr></tbody>
+    </table>
+  </section>
+</div>
+<div class="note">Scoring model, contact weights and message templates match <code>secns/config.py</code> and <code>secns/agents.py</code> in the submitted source (see Chapter 9 of the report). This page recomputes them in JavaScript purely so it can run without a Python process behind it.</div>
+
+<script>
+/* ======================================================================
+   Mirrors secns/config.py and secns/agents.py exactly (same numbers,
+   same weights, same overrides). Kept in one file only so this page
+   can be opened or shared as a single static link with no server.
+   ====================================================================== */
+const ROSTER=[
+ {n:"Rajesh Arora",   r:"Father",          ch:["Call","SMS"],   km:2.1, avail:0.95, med:false},
+ {n:"Sunita Arora",   r:"Mother",          ch:["Call","SMS"],   km:2.1, avail:0.90, med:false},
+ {n:"Dr. M. Kulkarni",r:"Family physician",ch:["SMS","Email"],  km:5.4, avail:0.70, med:true},
+ {n:"Aditi Sharma",   r:"Roommate",        ch:["SMS"],          km:0.3, avail:0.60, med:false},
+ {n:"108 Ambulance",  r:"Emergency service",ch:["Call"],        km:3.8, avail:1.00, med:true},
+ {n:"Campus Security",r:"Institutional",   ch:["SMS"],          km:1.2, avail:0.85, med:false}
+];
+const MP={name:"Bhumika Arora", age:"20 F", blood:"B+", allergy:"Penicillin", implants:"None"};
+const EV={
+ fall:    {l:"Fall detected",        base:55, needMed:true},
+ cardiac: {l:"Cardiac anomaly",      base:80, needMed:true},
+ crash:   {l:"Vehicle crash",        base:85, needMed:true},
+ sos:     {l:"Manual SOS",           base:70, needMed:false},
+ fire:    {l:"Smoke / fire",         base:75, needMed:false},
+ inactive:{l:"Prolonged inactivity", base:35, needMed:false}
+};
+const LOC={
+ home:   {l:"Home, Rajapeth, Amravati", c:"20.932N, 77.780E",  h:"Dr. Panjabrao Deshmukh Hospital — 3.1 km"},
+ road:   {l:"NH-53, near Badnera bypass, Amravati", c:"20.855N, 77.744E", h:"Amravati Civil Hospital — 8.7 km"},
+ campus: {l:"SIT Nagpur Campus", c:"21.096N, 79.017E", h:"AIIMS Nagpur — 6.2 km"},
+ unknown:{l:"Cell-tower estimate, ±850 m, Amravati", c:"approximate", h:"Nearest PHC — approx. 4 km"}
+};
+// Prioritisation weights — identical to config.py
+const W_REL=0.35, W_PROX=0.25, W_AVAIL=0.25, W_MED=0.15;
+const REL_SCORE={Father:1.0, Mother:1.0, Roommate:0.75};
+const REL_DEFAULT=0.6;
+const MED_NEEDED=0.9, MED_SPARE=0.4, MED_NONE=0.2;
+const EMS_NAME="108 Ambulance", EMS_W={1:1.00,2:0.55,3:0.10};
+const INST_NAME="Campus Security", INST_JUR="campus", INST_BONUS=0.20, INST_PENALTY=0.15;
+const MED_TIER1_BONUS=0.15;   // Override 3 — keeps the treating clinician in a Tier-1 medical case
+const AGENTS=[
+ ["Perception Agent","Normalises raw sensor streams into a structured event object"],
+ ["Triage Agent","Scores severity and classifies the incident tier"],
+ ["Context Agent","Resolves location, medical profile and nearest facility"],
+ ["Prioritisation Agent","Ranks contacts by relation, proximity and availability"],
+ ["Composer Agent","Generates channel-specific, role-specific messages"],
+ ["Dispatch & Escalation Agent","Sends, waits for acknowledgement, escalates on timeout"]
+];
+
+let busy=false, n=0, lat=[], falseAlarms=0, timers=[];
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>timers.push(setTimeout(r,ms)));
+
+$("pipe").innerHTML=AGENTS.map((a,i)=>`
+ <div class="agent" id="ag${i}">
+   <div class="dot">${i+1}</div>
+   <div><div class="aname">${a[0]}</div><div class="arole">${a[1]}</div>
+   <div class="athink mono" id="th${i}"></div></div>
+ </div>`).join("");
+
+$("hr").oninput=e=>$("hrv").textContent=e.target.value+" bpm";
+$("g").oninput=e=>$("gv").textContent=(+e.target.value).toFixed(1)+" G";
+
+// ---- Agent 2: Triage — S = base + f_hr + f_impact + f_reply, clamped [0,100]
+function triage(){
+ const ev=$("ev").value, hr=+$("hr").value, g=+$("g").value, resp=+$("resp").value;
+ const f=[]; let s=EV[ev].base; f.push(`event "${EV[ev].l}" -> base ${EV[ev].base}`);
+ if(hr>140||hr<45){s+=15;f.push(`HR ${hr} bpm outside safe band -> +15`);}
+ else if(hr>120||hr<55){s+=7;f.push(`HR ${hr} bpm borderline -> +7`);}
+ else f.push(`HR ${hr} bpm nominal -> +0`);
+ if(g>8){s+=15;f.push(`impact ${g.toFixed(1)} G severe -> +15`);}
+ else if(g>3){s+=8;f.push(`impact ${g.toFixed(1)} G moderate -> +8`);}
+ else f.push(`impact ${g.toFixed(1)} G low -> +0`);
+ if(resp===0){s+=12;f.push("no reply to check-in in 30 s -> +12");}
+ if(resp===1){s-=35;f.push("user replied \"I'm OK\" -> -35 (false-alarm suppression)");}
+ if(resp===2){s+=10;f.push('user replied "Need help" -> +10');}
+ s=Math.max(0,Math.min(100,Math.round(s)));
+ const tier=s>=75?1:s>=45?2:3;
+ const suppressed = (tier===3 && resp===1);
+ return {ev,hr,g,resp,s,tier,f,suppressed};
+}
+// ---- Agent 4: Prioritisation — w = 0.35 rel + 0.25 prox + 0.25 avail + 0.15 med, + 3 overrides
+function rank(t){
+ return ROSTER.map(c=>{
+   const rel=REL_SCORE[c.r] ?? REL_DEFAULT;
+   const prox=1/(1+c.km/3);
+   const needMed=EV[t.ev].needMed;
+   const med = (c.med && needMed) ? MED_NEEDED : c.med ? MED_SPARE : MED_NONE;
+   let w = W_REL*rel + W_PROX*prox + W_AVAIL*c.avail + W_MED*med;
+   if(c.n===EMS_NAME) w = EMS_W[t.tier];                                   // override 1
+   if(c.n===INST_NAME) w += ($("loc").value===INST_JUR) ? INST_BONUS : -INST_PENALTY; // override 2
+   if(c.med && needMed && t.tier===1 && c.n!==EMS_NAME) w += MED_TIER1_BONUS;          // override 3
+   return {...c, w:Math.round(w*1000)/1000};
+ }).sort((a,b)=>b.w-a.w).slice(0, t.tier===1?4:t.tier===2?3:2);
+}
+// ---- Agent 5: Composer — role-adapted message text
+function compose(c,t,id){
+ const L=LOC[$("loc").value];
+ if(c.n===EMS_NAME)
+  return `EMERGENCY DISPATCH REQUEST ${id}\nPatient: ${MP.name}, ${MP.age}. Blood group ${MP.blood}. Allergy: ${MP.allergy}.\nEvent: ${EV[t.ev].l}. HR ${t.hr} bpm, impact ${t.g.toFixed(1)} G.\nLocation: ${L.l} (${L.c})\nSeverity ${t.s}/100, Tier ${t.tier}. Automated request from SECNS.`;
+ if(c.med)
+  return `Doctor, automated alert ${id} for your patient ${MP.name}.\n${EV[t.ev].l} detected. Vitals: HR ${t.hr} bpm, impact ${t.g.toFixed(1)} G. Severity ${t.s}/100.\nLocation: ${L.l}. Nearest facility: ${L.h}.\nReply ACK to take the case.`;
+ if(c.r==="Father"||c.r==="Mother"){
+  const emsIn = t.ranked ? t.ranked.some(x=>x.n===EMS_NAME) : false;
+  return `Alert: ${EV[t.ev].l} involving ${MP.name.split(" ")[0]}.\nShe is at ${L.l}. Heart rate ${t.hr} bpm. ${emsIn?"An ambulance has been requested.":"No ambulance has been requested yet."}\nPlease acknowledge so we know help is on the way. Ref ${id}.`;
+ }
+ return `${MP.name.split(" ")[0]} may need help nearby — ${EV[t.ev].l} detected at ${L.l}.\nYou are the closest listed contact (${c.km} km). Can you check on her? Reply ACK.`;
+}
+
+async function say(i,txt){
+ const el=$("th"+i); $("ag"+i).classList.add("on"); el.textContent="";
+ $("astat").textContent=`AGENT ${i+1} RUNNING`; $("astat").classList.add("blink");
+ for(const line of txt){ el.textContent+=(el.textContent?"\n":"")+line; await sleep(220); }
+ await sleep(180); $("ag"+i).classList.add("done");
+}
+function contactRow(c,i,id){
+ return `<div class="c-row"><div class="rank mono">${i+1}</div>
+  <div><b>${c.n}</b><small>${c.r} · ${c.ch.join("+")} · ${c.km} km · w=${c.w.toFixed(2)}</small></div>
+  <span class="st" id="st-${id}-${i}">queued</span></div>`;
+}
+function pushMsg(c,i,id,body){
+ if($("feed").querySelector(".empty")) $("feed").innerHTML="";
+ const d=document.createElement("div"); d.className="msg";
+ d.innerHTML=`<div class="h"><span>${c.ch.join("+")} → <b style="color:var(--text)">${c.n}</b></span><span class="mono">${new Date().toLocaleTimeString()}</span></div>
+  <div class="b"></div><button class="ackbtn">Mark acknowledged</button>`;
+ d.querySelector(".b").textContent=body;
+ d.querySelector("button").onclick=e=>{
+   const s=$(`st-${id}-${i}`); if(s){s.className="st ack";s.textContent="ACK";}
+   e.target.textContent="Acknowledged ✓"; e.target.disabled=true; e.target.style.opacity=.5;
+   const row=$("row-"+id); if(row) row.children[6].textContent="Acknowledged by "+c.r.toLowerCase();
+ };
+ $("feed").prepend(d);
+}
+function addLog(id,t,cnt){
+ if($("log").querySelector("td[colspan]")) $("log").innerHTML="";
+ const tr=document.createElement("tr"); tr.id="row-"+id;
+ tr.innerHTML=`<td class="mono">${id}</td><td>${EV[t.ev].l}</td><td class="mono">${t.s}</td>
+  <td>Tier ${t.tier}</td><td>${cnt}</td><td id="ackc-${id}">0/${cnt}</td><td>${t.suppressed?"Suppressed — no dispatch":"Dispatched, awaiting ack"}</td>`;
+ $("log").prepend(tr);
+}
+
+async function run(){
+ if(busy) return; busy=true; $("run").disabled=true;
+ document.querySelectorAll(".agent").forEach(a=>a.className="agent");
+ document.querySelectorAll(".athink").forEach(a=>a.textContent="");
+ const t0=performance.now();
+ const t=triage(), L=LOC[$("loc").value];
+ const id="INC-"+String(++n).padStart(4,"0");
+
+ await say(0,[`raw packet received @ ${new Date().toLocaleTimeString()}`,
+   `source: wearable IMU + PPG, vehicle telematics, panic button`,
+   `normalised -> {event:"${t.ev}", hr:${t.hr}, impact:${t.g.toFixed(1)}G, reply:${t.resp}}`,
+   `signal integrity 98% — no sensor dropout, event is genuine`]);
+
+ await say(1,["applying weighted rule engine:",...t.f.map(x=>"  - "+x),
+   `severity = ${t.s}/100 -> TIER ${t.tier} (${t.tier===1?"critical":t.tier===2?"urgent":"advisory"})`]);
+
+ $("score").textContent=t.s; $("barfill").style.width=t.s+"%";
+ $("tier").className="tag t"+t.tier;
+ $("tier").textContent=["","TIER 1 · CRITICAL","TIER 2 · URGENT","TIER 3 · ADVISORY"][t.tier];
+ $("iid").textContent=id; $("lout").textContent=L.l; $("hosp").textContent=L.h;
+
+ await say(2,[`GPS/cell fusion -> ${L.l}`,`routing to nearest facility: ${L.h}`,
+   `medical profile loaded: blood group ${MP.blood}, allergy ${MP.allergy}, implants ${MP.implants}`,
+   `local time-of-day and traffic factored into ETA estimate`]);
+
+ if(t.suppressed){
+   await say(3,["severity below dispatch threshold and user self-cleared",
+     "decision: SUPPRESS notification — protects contacts from alert fatigue",
+     "logging event for trend analysis only"]);
+   falseAlarms++; $("k3").textContent=falseAlarms;
+   addLog(id,t,0); $("astat").textContent="6 IDLE"; $("astat").classList.remove("blink");
+   busy=false; $("run").disabled=false; $("k1").textContent=n; return;
+ }
+
+ const ranked=rank(t); t.ranked=ranked;
+ await say(3,["scoring contacts on relation (0.35), proximity (0.25), availability (0.25), medical fit (0.15)",
+   "+ overrides: EMS weight by tier, institutional by jurisdiction, clinician bonus at Tier 1",
+   ...ranked.map((c,i)=>`  ${i+1}. ${c.n} — w=${c.w.toFixed(2)} (${c.r})`),
+   `${ranked.length} contacts selected for tier ${t.tier}`]);
+ $("contacts").innerHTML=ranked.map((c,i)=>contactRow(c,i,id)).join("");
+
+ await say(4,["generating role-adapted messages — plain language for family,",
+   "clinical payload for the physician, dispatch format for 108",
+   `${ranked.length} messages drafted, each under channel length limits`]);
+
+ await say(5,["dispatching in priority order with 2 s stagger…"]);
+ for(let i=0;i<ranked.length;i++){
+   const c=ranked[i];
+   pushMsg(c,i,id,compose(c,t,id));
+   const s=$(`st-${id}-${i}`); if(s){s.className="st sent";s.textContent="sent";}
+   await sleep(650);
+ }
+ addLog(id,t,ranked.length);
+ $("th5").textContent+=`\nall ${ranked.length} dispatched · escalation window 60 s · no-ack -> auto-escalate to next tier`;
+
+ const ms=Math.round(performance.now()-t0); lat.push(ms);
+ $("k1").textContent=n;
+ $("k2").textContent=(lat.reduce((a,b)=>a+b,0)/lat.length/1000).toFixed(1)+" s";
+ $("astat").textContent="6 COMPLETE"; $("astat").classList.remove("blink");
+
+ timers.push(setTimeout(()=>{
+   ranked.forEach((c,i)=>{const s=$(`st-${id}-${i}`);
+     if(s&&s.textContent==="sent"){s.className="st esc";s.textContent="escalated";}});
+ },12000));
+ busy=false; $("run").disabled=false;
+}
+$("run").onclick=run;
+$("reset").onclick=()=>{
+ timers.forEach(clearTimeout); timers=[]; busy=false; n=0; lat=[]; falseAlarms=0;
+ $("run").disabled=false;
+ document.querySelectorAll(".agent").forEach(a=>a.className="agent");
+ document.querySelectorAll(".athink").forEach(a=>a.textContent="");
+ $("score").textContent="—"; $("barfill").style.width="0";
+ $("tier").className="tag t3"; $("tier").textContent="AWAITING SIGNAL";
+ $("iid").textContent=$("lout").textContent=$("hosp").textContent="—";
+ $("contacts").innerHTML='<div class="empty">No ranked contacts yet.</div>';
+ $("feed").innerHTML='<div class="empty">No messages dispatched.</div>';
+ $("log").innerHTML='<tr><td colspan="7" style="color:var(--muted);padding:14px 8px">Empty — trigger an event to populate.</td></tr>';
+ $("k1").textContent="0";$("k2").textContent="—";$("k3").textContent="0";
+ $("astat").textContent="6 IDLE";$("astat").classList.remove("blink");
+};
+</script>
+</body>
+</html>
